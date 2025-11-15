@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Botanical Garden - Language as Flora</title>
+    <style>
+        :root {
+  --color-white: rgba(255, 255, 255, 1);
+  --color-black: rgba(0, 0, 0, 1);
+  --color-cream-50: rgba(252, 252, 249, 1);
+  --color-cream-100: rgba(255, 255, 253, 1);
+  --color-gray-200: rgba(245, 245, 245, 1);
+  --color-gray-300: rgba(167, 169, 169, 1);
+  --color-gray-400: rgba(119, 124, 124, 1);
+  --color-slate-500: rgba(98, 108, 113, 1);
+  --color-brown-600: rgba(94, 82, 64, 1);
+  --color-charcoal-700: rgba(31, 33, 33, 1);
+  --color-charcoal-800: rgba(38, 40, 40, 1);
+  --color-slate-900: rgba(19, 52, 59, 1);
+  --color-teal-300: rgba(50, 184, 198, 1);
+  --color-teal-400: rgba(45, 166, 178, 1);
+  --color-teal-500: rgba(33, 128, 141, 1);
+  --color-teal-600: rgba(29, 116, 128, 1);
+  --color-teal-700: rgba(26, 104, 115, 1);
+  --color-teal-800: rgba(41, 150, 161, 1);
+  --color-red-400: rgba(255, 84, 89, 1);
+  --color-red-500: rgba(192, 21, 47, 1);
+  --color-orange-400: rgba(230, 129, 97, 1);
+  --color-orange-500: rgba(168, 75, 47, 1);
+
+  --font-family-base: "FKGroteskNeue", "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+  --font-size-3xl: 24px;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 550;
+  --font-weight-bold: 600;
+
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+
+  --radius-base: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family-base);
+    overflow: hidden;
+    background: var(--color-cream-50);
+    color: var(--color-text);
+}
+
+#gardenCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(to bottom, #f5f3e8 0%, #e8e6d8 100%);
+}
+
+.ui-overlay {
+    position: fixed;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.ui-overlay * {
+    pointer-events: auto;
+}
+
+/* Intro Modal */
+.intro-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(252, 252, 249, 0.98);
+    backdrop-filter: blur(12px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+.intro-modal.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.intro-content {
+    max-width: 700px;
+    padding: var(--space-32);
+    text-align: center;
+}
+
+.intro-content h1 {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-16);
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 20px rgba(50, 200, 220, 0.5);
+}
+
+.intro-content .subtitle {
+    font-size: var(--font-size-lg);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-24);
+    font-style: italic;
+}
+
+.intro-content p {
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+    line-height: 1.7;
+    margin-bottom: var(--space-16);
+}
+
+.mythology-box {
+    background: var(--color-bg-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-20);
+    margin-top: var(--space-24);
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+    color: var(--color-text);
+}
+
+.begin-btn {
+    margin-top: var(--space-32);
+    padding: var(--space-12) var(--space-32);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    background: var(--color-secondary);
+    color: var(--color-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: var(--font-family-base);
+}
+
+.begin-btn:hover {
+    background: var(--color-secondary-hover);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(var(--color-teal-500-rgb), 0.3);
+}
+
+/* Text Input */
+.text-input-container {
+    bottom: var(--space-24);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 700px;
+}
+
+.text-input {
+    width: 100%;
+    padding: var(--space-16);
+    background: rgba(255, 255, 253, 0.95);
+    border: 1px solid var(--color-card-border);
+    border-radius: var(--radius-lg);
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+    font-family: var(--font-family-base);
+    outline: none;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    resize: none;
+}
+
+.text-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 20px rgba(var(--color-teal-500-rgb), 0.2);
+}
+
+.text-input::placeholder {
+    color: var(--color-text-secondary);
+}
+
+/* Controls Bar */
+.controls-bar {
+    top: var(--space-24);
+    right: var(--space-24);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+    background: rgba(235, 230, 215, 0.92);
+    padding: var(--space-16);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(140, 160, 130, 0.3);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(94, 82, 64, 0.08);
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    justify-content: space-between;
+}
+
+.control-label {
+    font-size: var(--font-size-sm);
+    color: rgba(94, 82, 64, 0.85);
+    white-space: nowrap;
+    min-width: 80px;
+    font-weight: var(--font-weight-medium);
+}
+
+.slider {
+    width: 120px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: linear-gradient(to right, rgba(235, 220, 200, 1), rgba(180, 200, 180, 0.6));
+    outline: none;
+    -webkit-appearance: none;
+    box-shadow: inset 0 1px 3px rgba(94, 82, 64, 0.15);
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(140, 180, 160, 1), rgba(100, 160, 140, 1));
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(94, 82, 64, 0.2);
+    border: 2px solid rgba(255, 255, 253, 0.8);
+}
+
+.slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(140, 180, 160, 1), rgba(100, 160, 140, 1));
+    cursor: pointer;
+    border: 2px solid rgba(255, 255, 253, 0.8);
+    box-shadow: 0 2px 6px rgba(94, 82, 64, 0.2);
+}
+
+.btn {
+    padding: var(--space-8) var(--space-16);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    background: rgba(220, 230, 210, 0.7);
+    color: rgba(70, 100, 90, 1);
+    border: 1px solid rgba(140, 160, 130, 0.3);
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: var(--font-family-base);
+    white-space: nowrap;
+    width: 100%;
+}
+
+.btn:hover {
+    background: rgba(200, 220, 190, 0.85);
+    border-color: rgba(100, 160, 140, 0.5);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(94, 82, 64, 0.1);
+}
+
+.btn:active {
+    transform: scale(0.96);
+}
+
+/* Artist Modal */
+.artist-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(252, 252, 249, 0.98);
+    backdrop-filter: blur(15px);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.artist-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: var(--color-surface);
+    border: 1px solid var(--color-card-border);
+    border-radius: var(--radius-lg);
+    max-width: 800px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: var(--space-32);
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+}
+
+.modal-close {
+    position: absolute;
+    top: var(--space-16);
+    right: var(--space-16);
+    background: transparent;
+    border: none;
+    color: var(--color-primary);
+    font-size: 32px;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-base);
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    background: var(--color-secondary);
+    transform: scale(1.1);
+}
+
+.modal-content h2 {
+    font-size: var(--font-size-3xl);
+    color: var(--color-primary);
+    margin-bottom: var(--space-24);
+    text-align: center;
+}
+
+.modal-body {
+    color: var(--color-text);
+    line-height: 1.7;
+}
+
+.modal-body h3 {
+    font-size: var(--font-size-lg);
+    color: var(--color-primary);
+    margin-top: var(--space-24);
+    margin-bottom: var(--space-12);
+}
+
+.modal-body h3:first-child {
+    margin-top: 0;
+}
+
+.modal-body p {
+    margin-bottom: var(--space-16);
+    font-size: var(--font-size-base);
+}
+
+/* Stats Panel */
+.stats-panel {
+    top: var(--space-24);
+    left: var(--space-24);
+    background: rgba(235, 230, 215, 0.92);
+    padding: var(--space-16);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(140, 160, 130, 0.3);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(94, 82, 64, 0.08);
+    font-size: var(--font-size-sm);
+    color: rgba(94, 82, 64, 0.85);
+    min-width: 200px;
+}
+
+.stats-panel h3 {
+    font-size: var(--font-size-base);
+    color: rgba(70, 110, 100, 1);
+    margin-bottom: var(--space-12);
+    font-weight: var(--font-weight-semibold);
+}
+
+.stat-line {
+    display: flex;
+    justify-content: space-between;
+    margin: var(--space-8) 0;
+}
+
+.stat-label {
+    color: rgba(94, 82, 64, 0.7);
+}
+
+.stat-value {
+    color: rgba(80, 130, 115, 1);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Footer Branding */
+.footer-branding {
+    position: fixed;
+    bottom: var(--space-16);
+    right: var(--space-24);
+    font-size: var(--font-size-xs);
+    color: rgba(var(--color-teal-500-rgb), 0.4);
+    font-family: var(--font-family-base);
+    letter-spacing: 0.02em;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.footer-branding a {
+    color: rgba(var(--color-teal-500-rgb), 0.5);
+    text-decoration: none;
+    transition: color 0.3s ease;
+    pointer-events: auto;
+}
+
+.footer-branding a:hover {
+    color: var(--color-primary);
+}
+
+@media (max-width: 768px) {
+    .controls-bar {
+        top: var(--space-12);
+        right: var(--space-12);
+        padding: var(--space-12);
+    }
+    
+    .stats-panel {
+        top: var(--space-12);
+        left: var(--space-12);
+        padding: var(--space-12);
+        min-width: 160px;
+        font-size: var(--font-size-xs);
+    }
+    
+    .text-input-container {
+        width: 95%;
+    }
+    
+    .slider {
+        width: 80px;
+    }
+}
+
+/* Audio Indicator */
+.audio-indicator {
+    position: fixed;
+    bottom: var(--space-24);
+    right: var(--space-24);
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    padding: 12px 16px;
+    background: rgba(235, 230, 215, 0.92);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(140, 160, 130, 0.3);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(94, 82, 64, 0.08);
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.audio-indicator:hover {
+    opacity: 1;
+}
+
+.audio-indicator.muted {
+    opacity: 0.3;
+}
+
+.audio-wave {
+    width: 3px;
+    height: 12px;
+    background: linear-gradient(to top, rgba(100, 160, 140, 0.6), rgba(140, 180, 160, 1));
+    border-radius: 2px;
+    animation: audioWave 0.8s ease-in-out infinite;
+}
+
+.audio-wave:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.audio-wave:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.audio-wave:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes audioWave {
+    0%, 100% { height: 12px; }
+    50% { height: 20px; }
+}
+
+@font-face {
+    font-family: 'FKGroteskNeue';
+    src: url('https://r2cdn.perplexity.ai/fonts/FKGroteskNeue.woff2') format('woff2');
+}
+    </style>
+</head>
+<body>
+    <canvas id="gardenCanvas"></canvas>
+    
+    <!-- Intro Modal -->
+    <div class="intro-modal" id="introModal">
+        <div class="intro-content">
+            <h1>BOTANICAL GARDEN</h1>
+            <p class="subtitle">Language as Living Flora</p>
+            <p>A beautiful, meditative botanical garden where each letter you type blooms into its own unique flower species. Watch as your words transform into a living sanctuary of petals, stems, and sacred geometry—a personal garden cultivated from language itself.</p>
+            
+            <p style="font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-top: var(--space-16);">🎵 <em>Listen as a subtle, meditative ambient soundtrack accompanies your planting—spacious, contemplative music perfect for deep focus and cultivation.</em></p>
+            
+            <div class="mythology-box">
+                <strong>The Botanical Cipher:</strong> Each of the 26 letters corresponds to a specific flower species. A becomes Anemone, B becomes Bluebell, C becomes Carnation, and so on through the alphabet. Fast bursts of typing create dense wildflower clusters, while pauses leave breathing room. Repeated letters grow fuller and more prominent blooms. Your garden becomes a living record of your words—a ceremonial mandala where language blooms into beauty.
+            </div>
+            
+            <button class="begin-btn" onclick="beginGrowing()">Begin Planting</button>
+        </div>
+    </div>
+    
+    <!-- Artist Statement Modal -->
+    <div class="artist-modal" id="artistModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <h2>The Botanical Garden: Language as Flora</h2>
+            <div class="modal-body">
+                <h3>The Botanical Cipher System</h3>
+                <p>Each of the 26 letters in the alphabet maps to a unique flower species, creating a deterministic cipher where the same text always produces the same garden arrangement, yet every unique text creates a completely different floral landscape. A = Anemone, B = Bluebell, C = Carnation, and so on through Z = Zinnia.</p>
+                
+                <h3>Each Keystroke Plants a Flower</h3>
+                <p>As you type, each letter blooms into its corresponding flower with a gentle unfurling animation. The flower's position, clustering, and arrangement are influenced by your typing rhythm—fast bursts create dense wildflower meadows, while slow, deliberate typing produces carefully spaced gardens with room to breathe.</p>
+                
+                <h3>Letter Repetition Creates Fuller Blooms</h3>
+                <p>The first time a letter appears, it blooms at standard size. But with each repetition, that flower grows larger, fuller, with more petals and greater presence. The most-repeated letters become the most prominent features of your garden, creating a natural visual hierarchy that reveals the structure of your text through botanical abundance.</p>
+                
+                <h3>Sacred Geometry in Garden Structure</h3>
+                <p>Your garden grows outward from the center in a mandala-like pattern. Subtle sacred geometry—concentric rings, hexagonal lattices, spiral arrangements—emerges naturally from your typing patterns. This underlying order represents the hidden structures in language, the patterns that connect all human expression.</p>
+                
+                <h3>Bird's-Eye View: The Ceremonial Mandala</h3>
+                <p>Press V to toggle to overhead perspective and witness your garden as a unified ceremonial mandala. From above, the sacred geometry becomes obvious, the density patterns reveal where you typed quickly versus slowly, and the overall color harmony shows the botanical palette of your particular text. Each garden is a unique floral fingerprint.</p>
+                
+                <h3>Day and Night Garden Modes</h3>
+                <p>Toggle between sunlit day gardens with warm, naturalistic colors and moonlit night gardens with cool tones and gentle bioluminescence. Each flower renders beautifully in both modes, creating completely different moods for the same text. Your garden lives through both day and night cycles.</p>
+                
+                <h3>Saving Your Garden</h3>
+                <p>Save your garden as a complete, interactive HTML file that preserves everything: the original text, all flower positions, the visualization engine, day/night toggle, bird's-eye view, and gentle animations. Your saved garden continues to bloom and sway indefinitely, creating a permanent botanical monument to your words.</p>
+                
+                <h3>The Meditative Soundscape</h3>
+                <p>A subtle, generative ambient soundtrack accompanies your garden cultivation. Inspired by meditative ambient pioneers like Brian Eno, the music features sustained pad sounds, sparse piano-like tones, and occasional bell chimes. Each keystroke also triggers a gentle chime that corresponds to the letter being planted. The soundscape is designed to support deep focus, meditation, and the ceremonial act of planting—never intrusive, always contemplative. All audio layers can be controlled via the volume slider and mute button.</p>
+                
+                <h3>A Digital Monument by unearth.im</h3>
+                <p>This is the fifth digital monument from unearth.im, exploring language as botanical organism and sacred cultivation. We transform the ephemeral act of typing into a permanent, living garden—revealing language not as static text but as flourishing, beautiful, ceremonial flora. Each garden is a personal sanctuary cultivated from words themselves, now enhanced with a complete meditative audio experience.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Text Input -->
+    <div class="ui-overlay text-input-container" id="textInputContainer" style="display: none;">
+        <textarea class="text-input" id="textInput" placeholder="Begin typing to plant your garden... Each letter blooms into its flower species." rows="3"></textarea>
+    </div>
+    
+    <!-- Stats Panel -->
+    <div class="ui-overlay stats-panel" id="statsPanel" style="display: none;">
+        <h3>Garden Status</h3>
+        <div class="stat-line">
+            <span class="stat-label">Flowers:</span>
+            <span class="stat-value" id="nodeCount">0</span>
+        </div>
+        <div class="stat-line">
+            <span class="stat-label">Species:</span>
+            <span class="stat-value" id="speciesCount">0</span>
+        </div>
+        <div class="stat-line">
+            <span class="stat-label">Characters:</span>
+            <span class="stat-value" id="charCount">0</span>
+        </div>
+    </div>
+    
+    <!-- Controls Bar -->
+    <div class="ui-overlay controls-bar" id="controlsBar" style="display: none;">
+        <div class="control-group">
+            <label class="control-label" for="intensitySlider">Intensity</label>
+            <input type="range" id="intensitySlider" class="slider" min="0.3" max="2" step="0.1" value="1">
+        </div>
+        <button class="btn" id="themeBtn" title="Toggle day/night mode">Night Mode</button>
+        <button class="btn" id="viewBtn" title="Toggle bird's-eye view (V)">Bird's Eye (V)</button>
+        <button class="btn" id="legendBtn" title="Show flower legend">Show Legend</button>
+        <button class="btn" id="pauseBtn" title="Pause/resume animation (P)">Pause (P)</button>
+        <button class="btn" id="resetBtn" title="Clear garden and start fresh">Clear Garden</button>
+        <button class="btn" id="infoBtn" title="View artist statement (I)">Info (I)</button>
+        <button class="btn" id="saveHtmlBtn" title="Save garden as interactive HTML file">Save as HTML</button>
+        <button class="btn" id="saveBtn" title="Save garden as image">Save Image</button>
+        <div class="control-group" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(140, 160, 130, 0.3);">
+            <label class="control-label" for="volumeSlider">Volume</label>
+            <input type="range" id="volumeSlider" class="slider" min="0" max="100" step="1" value="20">
+        </div>
+        <button class="btn" id="muteBtn" title="Mute/unmute all audio (M)">Mute Audio</button>
+    </div>
+
+    <!-- Audio Indicator -->
+    <div class="audio-indicator" id="audioIndicator" title="Audio is playing">
+        <div class="audio-wave"></div>
+        <div class="audio-wave"></div>
+        <div class="audio-wave"></div>
+    </div>
+
+    <!-- Footer Branding -->
+    <div class="footer-branding">
+        digital monument by <a href="https://unearth.im" target="_blank">unearth.im</a>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
