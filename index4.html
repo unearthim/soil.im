@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>soil.im | Xenobotany Lab</title>
+    <meta name="description" content="Soil: A high-fidelity botanical simulation. Cultivate procedural flora in a sterile digital environment.">
+    
+    <!-- Fonts: Inter (Clean UI) & Roboto Mono (Data) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Palette: "Clean Room" */
+            --bg-color: #f0f2f5;
+            --surface-color: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #6e6e73;
+            
+            --accent-primary: #0066cc; /* Lab Blue */
+            --accent-secondary: #ff3366; /* Alert Red */
+            
+            --grid-color: rgba(0, 0, 0, 0.04);
+            --border-color: rgba(0, 0, 0, 0.08);
+            
+            --shadow-soft: 0 4px 20px rgba(0,0,0,0.05);
+            --shadow-sharp: 0 1px 2px rgba(0,0,0,0.1);
+            
+            --font-ui: 'Inter', sans-serif;
+            --font-code: 'Roboto Mono', monospace;
+            
+            --radius: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-ui);
+            background: var(--bg-color);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #gardenCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            /* Lightbox Effect */
+            background: radial-gradient(circle at center, #ffffff 0%, #f0f2f5 100%);
+        }
+
+        /* Grid Background */
+        .grid-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none; z-index: 1;
+        }
+
+        /* --- UI FRAMEWORK --- */
+        
+        .ui-layer {
+            position: fixed;
+            z-index: 10;
+            width: 100%; height: 100%;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            grid-template-rows: auto 1fr auto;
+            pointer-events: none;
+            gap: 24px;
+        }
+        .ui-layer * { pointer-events: auto; }
+
+        /* Header Card (Top Left) */
+        .card-header {
+            grid-column: 1; grid-row: 1;
+            background: var(--surface-color);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-color);
+            display: flex; flex-direction: column; gap: 4px;
+        }
+        h1 {
+            font-size: 1rem; font-weight: 600; letter-spacing: -0.02em;
+            color: var(--text-primary); margin: 0;
+            display: flex; align-items: center; gap: 8px;
+        }
+        h1::before {
+            content: ''; display: block; width: 8px; height: 8px;
+            background: var(--accent-primary); border-radius: 50%;
+        }
+        .subtitle {
+            font-family: var(--font-code); font-size: 0.6rem;
+            color: var(--text-secondary); text-transform: uppercase;
+            letter-spacing: 0.05em; margin-left: 16px;
+        }
+
+        /* Stats Card (Top Right) */
+        .card-stats {
+            grid-column: 3; grid-row: 1;
+            background: var(--surface-color);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-color);
+            font-family: var(--font-code);
+            font-size: 0.7rem;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .stat-row { 
+            display: flex; justify-content: space-between; 
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 4px;
+        }
+        .stat-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .stat-label { color: var(--text-secondary); }
+        .stat-val { color: var(--text-primary); font-weight: 500; }
+
+        /* Input Stage (Bottom Center) */
+        .input-wrapper {
+            grid-column: 2; grid-row: 3;
+            display: flex; justify-content: center;
+            padding-bottom: 20px;
+        }
+        .input-shell {
+            background: var(--surface-color);
+            border-radius: 100px;
+            padding: 8px 8px 8px 24px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-color);
+            display: flex; align-items: center;
+            width: 100%; max-width: 500px;
+            transition: all 0.2s ease;
+        }
+        .input-shell:focus-within {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+            transform: translateY(-2px);
+        }
+        .text-input {
+            border: none; outline: none; background: transparent;
+            font-family: var(--font-ui); font-size: 1rem;
+            color: var(--text-primary);
+            flex-grow: 1;
+        }
+        .text-input::placeholder { color: var(--text-secondary); opacity: 0.5; }
+        
+        .input-btn {
+            background: var(--bg-color);
+            border: none;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-secondary);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .input-btn:hover { color: var(--accent-primary); background: #e1e4e8; }
+
+        /* Tools (Bottom Right) */
+        .tools-wrapper {
+            grid-column: 3; grid-row: 3;
+            display: flex; gap: 8px; justify-content: flex-end; align-items: flex-end;
+        }
+        .tool-btn {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-secondary);
+            font-size: 1.2rem;
+            box-shadow: var(--shadow-sharp);
+            transition: all 0.2s;
+        }
+        .tool-btn:hover {
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+        .tool-btn.active {
+            background: var(--text-primary);
+            color: var(--surface-color);
+            border-color: var(--text-primary);
+        }
+
+        /* Color Palette (Bottom Left) */
+        .palette-wrapper {
+            grid-column: 1; grid-row: 3;
+            display: flex; align-items: flex-end; gap: 12px;
+        }
+        .color-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            position: relative;
+        }
+        .color-dot::after {
+            content: attr(data-label);
+            position: absolute; left: 16px; top: -2px;
+            font-family: var(--font-code); font-size: 0.6rem;
+            color: var(--text-secondary); white-space: nowrap;
+        }
+
+        /* --- MODAL --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.5s;
+        }
+        .modal-overlay.hidden { opacity: 0; pointer-events: none; }
+
+        .modal-card {
+            background: var(--surface-color);
+            padding: 48px;
+            max-width: 480px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .modal-card h2 {
+            font-family: var(--font-ui);
+            font-weight: 600; font-size: 1.8rem;
+            margin-bottom: 16px; color: var(--text-primary);
+        }
+        .modal-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem; line-height: 1.6;
+            margin-bottom: 32px;
+        }
+        .btn-primary {
+            background: var(--text-primary);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 100px;
+            font-family: var(--font-ui);
+            font-weight: 500; font-size: 0.95rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: #000;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .ui-layer {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr auto;
+                padding: 16px; gap: 16px;
+            }
+            .card-header { grid-column: 1; grid-row: 1; }
+            .card-stats { grid-column: 1; grid-row: 2; }
+            .input-wrapper { grid-column: 1; grid-row: 3; align-items: flex-end; }
+            .palette-wrapper { display: none; }
+            .tools-wrapper { grid-column: 1; grid-row: 4; justify-content: center;}
+        }
+        
+        .footer-brand {
+            position: fixed; bottom: 24px; left: 24px;
+            font-family: var(--font-code); font-size: 0.6rem;
+            color: var(--text-secondary); opacity: 0.4;
+            z-index: 5;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="grid-overlay"></div>
+    <canvas id="gardenCanvas"></canvas>
+
+    <div class="ui-layer" id="mainUI" style="opacity: 0; transition: opacity 1s;">
+        
+        <div class="card-header">
+            <h1>soil.im</h1>
+            <div class="subtitle">XENOBOTANY LABORATORY</div>
+        </div>
+
+        <div class="card-stats">
+            <div class="stat-row"><span class="stat-label">Specimens</span><span class="stat-val" id="stat-count">0</span></div>
+            <div class="stat-row"><span class="stat-label">Diversity</span><span class="stat-val" id="stat-species">0</span></div>
+            <div class="stat-row"><span class="stat-label">Genome</span><span class="stat-val" id="stat-len">0bp</span></div>
+        </div>
+
+        <div class="palette-wrapper">
+            <div class="color-dot" style="background: #0066cc;" data-label="Active"></div>
+            <div class="color-dot" style="background: #ff3366;" data-label="Variant"></div>
+        </div>
+
+        <div class="input-wrapper">
+            <div class="input-shell">
+                <input type="text" class="text-input" id="textInput" placeholder="Input sequence data..." autocomplete="off">
+                <button class="input-btn" id="resetBtn" title="Clear">✕</button>
+            </div>
+        </div>
+
+        <div class="tools-wrapper">
+            <button class="tool-btn" id="viewBtn" title="Change View">◉</button>
+            <button class="tool-btn" id="saveBtn" title="Archive">⬇</button>
+        </div>
+
+    </div>
+
+    <!-- Intro Modal -->
+    <div class="modal-overlay" id="introModal">
+        <div class="modal-card">
+            <h2>Xenobotany Lab</h2>
+            <p>Welcome to the clean room.<br>
+            This system converts text strings into procedural biological schematics.<br>
+            Type to cultivate new specimens.</p>
+            <button class="btn-primary" onclick="initSystem()">Initialize Lab</button>
+        </div>
+    </div>
+    
+    <div class="footer-brand">UNEARTH.IM // ARTIFACT 05</div>
+
+    <script>
+        /**
+         * SOIL.IM // GEMINI 3.0 REFACTOR
+         * Aesthetic: Clean Lab / CAD / Swiss Design
+         */
+
+        const canvas = document.getElementById('gardenCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let flowers = [];
+        
+        // Config
+        const config = {
+            perspective: 0, // 0 = Side (Lab Bench), 1 = Top (Petri Dish)
+        };
+
+        // UI
+        const ui = {
+            count: document.getElementById('stat-count'),
+            species: document.getElementById('stat-species'),
+            len: document.getElementById('stat-len'),
+            input: document.getElementById('textInput')
+        };
+
+        // --- CLASSES ---
+
+        class Specimen {
+            constructor(char, x, y) {
+                this.char = char;
+                this.x = x;
+                this.y = y;
+                
+                // Genetics based on Char Code
+                const code = char.charCodeAt(0);
+                // Lab colors: Blueprint Blue, Alert Red, Slate, Teal
+                const hues = [210, 340, 200, 160, 280];
+                const hue = hues[code % hues.length];
+                
+                this.colorMain = `hsla(${hue}, 80%, 50%, 0.8)`;
+                this.colorStroke = `hsla(${hue}, 80%, 40%, 1)`;
+                this.colorFill = `hsla(${hue}, 80%, 90%, 0.4)`;
+                
+                this.sides = (code % 6) + 3;
+                this.radius = 20 + (code % 25);
+                this.height = 60 + (code % 60);
+                
+                this.growth = 0;
+                this.swayOffset = Math.random() * 100;
+                this.wobbleSpeed = 0.002;
+            }
+
+            draw(ctx, time) {
+                if (this.growth < 1) this.growth += 0.05; // Snappy growth
+                const scale = this.growth;
+
+                const drawX = this.x;
+                const drawY = this.y;
+
+                ctx.save();
+                ctx.translate(drawX, drawY);
+
+                // 1. Draw Stem (Clean Technical Line)
+                if (config.perspective === 0) {
+                    const sway = Math.sin(time * this.wobbleSpeed + this.swayOffset) * 5;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    // Angular, technical stem
+                    ctx.lineTo(sway * 0.5, -this.height * 0.5);
+                    ctx.lineTo(sway, -this.height);
+                    
+                    ctx.strokeStyle = '#1a1a1a'; // Ink black
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    
+                    // Nodes on stem
+                    ctx.fillStyle = '#1a1a1a';
+                    ctx.beginPath(); ctx.arc(sway*0.5, -this.height*0.5, 2, 0, Math.PI*2); ctx.fill();
+
+                    ctx.translate(sway, -this.height);
+                }
+
+                // 2. Draw Flower (CAD Schematic style)
+                ctx.rotate(time * 0.0005); // Very slow rotation
+                
+                // Fill Layer (Translucent)
+                ctx.beginPath();
+                for (let i = 0; i <= this.sides; i++) {
+                    const angle = (i / this.sides) * Math.PI * 2;
+                    const r = this.radius * scale;
+                    const px = Math.cos(angle) * r;
+                    const py = Math.sin(angle) * r;
+                    if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+                }
+                ctx.closePath();
+                ctx.fillStyle = this.colorFill;
+                ctx.fill();
+                
+                // Stroke Layer (Precise)
+                ctx.strokeStyle = this.colorStroke;
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                
+                // Inner Geometry (Details)
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius * 0.3 * scale, 0, Math.PI*2);
+                ctx.strokeStyle = '#1a1a1a';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                // Label (Tiny technical text)
+                ctx.fillStyle = '#6e6e73';
+                ctx.font = '10px Roboto Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.char.toUpperCase(), 0, this.radius + 12);
+
+                ctx.restore();
+            }
+        }
+
+        // --- SYSTEM ---
+
+        function init() {
+            resize();
+            loop();
+            window.addEventListener('resize', resize);
+        }
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        function loop() {
+            const time = Date.now();
+            ctx.clearRect(0, 0, width, height);
+            
+            // Sorting
+            if (config.perspective === 0) {
+                flowers.sort((a, b) => a.y - b.y);
+            }
+
+            flowers.forEach(f => f.draw(ctx, time));
+            requestAnimationFrame(loop);
+        }
+
+        // --- INPUT ---
+        let lastLen = 0;
+        ui.input.addEventListener('input', (e) => {
+            const val = e.target.value;
+            if (val.length > lastLen) {
+                spawn(val.slice(-1));
+            }
+            lastLen = val.length;
+            updateStats(val);
+        });
+
+        function spawn(char) {
+            if(char.trim() === '') return;
+            
+            let x, y;
+            if (config.perspective === 1) {
+                // Grid/Petri Layout
+                // Simple spiral packing
+                const i = flowers.length;
+                const angle = i * 0.5; // Loose spiral
+                const r = 20 * Math.sqrt(i) + 20;
+                x = width/2 + Math.cos(angle) * r;
+                y = height/2 + Math.sin(angle) * r;
+            } else {
+                // Lab Bench Layout
+                x = Math.random() * (width - 100) + 50;
+                y = height - (Math.random() * height * 0.3) - 120; // Keep mostly bottom
+            }
+            
+            flowers.push(new Specimen(char, x, y));
+        }
+
+        function updateStats(text) {
+            ui.count.innerText = flowers.length;
+            const unique = new Set(text.split('')).size;
+            ui.species.innerText = unique;
+            ui.len.innerText = text.length + "bp";
+        }
+
+        // --- CONTROLS ---
+        
+        window.initSystem = () => {
+            document.getElementById('introModal').classList.add('hidden');
+            document.getElementById('mainUI').style.opacity = 1;
+            ui.input.focus();
+            init();
+        }
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            flowers = [];
+            ui.input.value = '';
+            lastLen = 0;
+            updateStats('');
+            ui.input.focus();
+        });
+
+        document.getElementById('viewBtn').addEventListener('click', (e) => {
+            config.perspective = config.perspective === 0 ? 1 : 0;
+            e.target.classList.toggle('active');
+            // In real app, animate positions. Here, let fresh ones spawn or just snap.
+            // Simple re-layout for demo:
+            flowers = [];
+            ui.input.value = '';
+            lastLen = 0;
+            updateStats('');
+            // (Clearing because positions are hard baked on spawn in this simple version)
+        });
+
+        // --- EXPORT LOGIC (CRYOSTASIS) ---
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(document.documentElement.outerHTML, 'text/html');
+            
+            // Bake Data
+            const dataScript = doc.createElement('script');
+            dataScript.id = 'cryo-core';
+            dataScript.type = 'application/json';
+            dataScript.textContent = JSON.stringify({
+                text: ui.input.value,
+                flowers: flowers.map(f => ({char: f.char, x: f.x, y: f.y})),
+                config: config
+            });
+            doc.body.appendChild(dataScript);
+
+            // Clean UI
+            const intro = doc.getElementById('introModal');
+            if(intro) intro.remove();
+            const mainUI = doc.getElementById('mainUI');
+            if(mainUI) mainUI.style.opacity = 1;
+
+            // Loader
+            const loader = doc.createElement('script');
+            loader.textContent = `
+                window.addEventListener('load', () => {
+                    const core = document.getElementById('cryo-core');
+                    if(core) {
+                        const data = JSON.parse(core.textContent);
+                        document.getElementById('textInput').value = data.text;
+                        // Auto-hydrate would go here
+                    }
+                });
+            `;
+            doc.body.appendChild(loader);
+
+            const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'soil-artifact.html';
+            link.click();
+        });
+
+    </script>
+</body>
+</html>
